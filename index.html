@@ -44,20 +44,39 @@
       // Loop through the results array and place a marker for each
       // set of coordinates.
       window.eqfeed_callback = function (results) {
-        var eqMarkers = results.features.map(function (feature, i) {
+        // Clustered markers
+        var markers= results.features.map(function (feature, i) {
           var coords = feature.geometry.coordinates;
           var latLng = new google.maps.LatLng(coords[1], coords[0]);
           return new google.maps.Marker({
             position: latLng,
-            label: String(feature.properties.mag)
+            label: String(feature.properties.mag),
+            mag: feature.properties.mag
           });
         })
 
-        var markerCluster = new MarkerClusterer(map, eqMarkers, {
+        var markerCluster = new MarkerClusterer(map, markers, {
           imagePath: 'img/m',
           minimumClusterSize: 1,
           maxZoom: 6
         });
+
+        // Magnitude-weighted heatmap
+        var heatmapData = [];
+        for (const marker of markers) {
+          var weightedLoc = {
+            location: marker.position,
+            weight: Math.pow(2, marker.mag)
+          };
+          heatmapData.push(weightedLoc);
+        }
+
+        var heatmap = new google.maps.visualization.HeatmapLayer({
+          data: heatmapData,
+          dissipating: false,
+          map: map
+        });
+
       }
 
     }
@@ -66,7 +85,7 @@
   <script src="https://unpkg.com/@google/markerclustererplus@4.0.1/dist/markerclustererplus.min.js">
   </script>
   <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFVbGHijml1wTcsYaqpIYJ3g7AU-KUMFI&callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCFVbGHijml1wTcsYaqpIYJ3g7AU-KUMFI&callback=initMap&libraries=visualization">
     </script>
 </body>
 
